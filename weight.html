@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weight Tracker</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  background: url('/openclaw/static/bg.jpg') center/cover no-repeat;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 0;
+}
+.top-right {
+  position: fixed;
+  top: 24px;
+  right: 32px;
+  z-index: 10;
+}
+.top-right a {
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.top-right a:hover { color: rgba(255,255,255,0.9); }
+.container {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 32px;
+}
+.hero {
+  text-align: center;
+  color: rgba(255,255,255,0.95);
+}
+.hero .big-weight {
+  font-size: 72px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  line-height: 1;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.hero .unit { font-size: 28px; font-weight: 300; opacity: 0.7; }
+.hero .date {
+  font-size: 14px;
+  color: rgba(255,255,255,0.5);
+  margin-top: 8px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.stat {
+  background: rgba(20,10,15,0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,140,90,0.2);
+  border-radius: 16px;
+  padding: 20px 28px;
+  text-align: center;
+  min-width: 130px;
+}
+.stat-value {
+  font-size: 28px;
+  font-weight: 600;
+  color: rgba(255,220,200,0.95);
+}
+.stat-label {
+  font-size: 11px;
+  color: rgba(255,180,150,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+.stat.positive .stat-value { color: #6fdd8b; }
+.stat.negative .stat-value { color: #ff8b7a; }
+.entry-form {
+  background: rgba(20,10,15,0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,140,90,0.2);
+  border-radius: 16px;
+  padding: 24px 32px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.entry-form label {
+  color: rgba(255,180,150,0.7);
+  font-size: 13px;
+}
+.entry-form input {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,140,90,0.3);
+  border-radius: 8px;
+  padding: 10px 16px;
+  color: rgba(255,255,255,0.95);
+  font-size: 18px;
+  width: 120px;
+  text-align: center;
+  outline: none;
+}
+.entry-form input:focus {
+  border-color: rgba(255,140,90,0.6);
+  background: rgba(255,255,255,0.12);
+}
+.entry-form button {
+  background: rgba(255,120,80,0.8);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.entry-form button:hover { background: rgba(255,120,80,1); transform: translateY(-1px); }
+.error {
+  background: rgba(255,80,80,0.2);
+  border: 1px solid rgba(255,80,80,0.4);
+  border-radius: 12px;
+  padding: 16px 24px;
+  color: rgba(255,180,180,0.9);
+  text-align: center;
+}
+.success {
+  background: rgba(80,220,120,0.2);
+  border: 1px solid rgba(80,220,120,0.4);
+  border-radius: 12px;
+  padding: 12px 20px;
+  color: rgba(180,255,200,0.9);
+  font-size: 14px;
+  text-align: center;
+}
+.chart-section {
+  background: rgba(20,10,15,0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,140,90,0.2);
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 700px;
+}
+.chart-section h3 {
+  color: rgba(255,220,200,0.8);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+}
+canvas { width: 100% !important; height: 200px !important; }
+.trend {
+  color: rgba(255,255,255,0.6);
+  font-size: 13px;
+  text-align: center;
+}
+.loading {
+  color: rgba(255,255,255,0.4);
+  font-size: 14px;
+  text-align: center;
+}
+@media (max-width: 480px) {
+  .hero .big-weight { font-size: 52px; }
+  .stats { gap: 12px; }
+  .stat { min-width: 100px; padding: 16px 20px; }
+}
+</style>
+</head>
+<body>
+<div class="top-right"><a href="/mc/">← Back</a></div>
+<div class="container">
+  <div class="hero">
+    <div class="big-weight" id="current-weight">—</div>
+    <div class="unit">lbs</div>
+    <div class="date" id="current-date">Loading...</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value" id="start-weight">—</div>
+      <div class="stat-label">Start</div>
+    </div>
+    <div class="stat positive">
+      <div class="stat-value" id="total-loss">—</div>
+      <div class="stat-label">Lost</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="goal-weight">—</div>
+      <div class="stat-label">Goal</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="bmi">—</div>
+      <div class="stat-label">BMI</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="day-change">—</div>
+      <div class="stat-label">Day</div>
+    </div>
+  </div>
+
+  <div class="entry-form">
+    <label for="weight-input">Today's weight (lbs):</label>
+    <input type="number" id="weight-input" step="0.1" min="100" max="400" placeholder="234.1">
+    <button onclick="logWeight()">Log</button>
+  </div>
+
+  <div id="message"></div>
+
+  <div class="chart-section">
+    <h3>Last 30 Days</h3>
+    <canvas id="chart"></canvas>
+  </div>
+
+  <div class="trend" id="trend"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+let chart = null;
+
+async function fetchSheet() {
+  const resp = await fetch('/api/weight');
+  if (!resp.ok) throw new Error('Failed to fetch: ' + resp.status);
+  return resp.json();
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  const [day, month, year] = d;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[parseInt(month)-1]} ${parseInt(day)}, ${year}`;
+}
+
+async function init() {
+  try {
+    const data = await fetchSheet();
+    // data.values is the array of rows
+    const rows = (data.values || []).slice(1); // skip header
+    const withWeight = rows.filter(r => r[2] && !isNaN(parseFloat(r[2])));
+    if (withWeight.length === 0) {
+      document.getElementById('current-date').textContent = 'No data yet';
+      return;
+    }
+
+    const last = withWeight[withWeight.length - 1];
+    const prev = withWeight.length > 1 ? withWeight[withWeight.length - 2] : null;
+
+    // Hero
+    document.getElementById('current-weight').textContent = parseFloat(last[2]).toFixed(1);
+    document.getElementById('current-date').textContent = fmtDate(last[1]);
+
+    // Stats
+    const start = withWeight[0];
+    const startW = parseFloat(start[2]);
+    const lastW = parseFloat(last[2]);
+    const totalLoss = (startW - lastW).toFixed(1);
+    const goal = last[3] ? parseFloat(last[3]).toFixed(1) : '—';
+    const bmi = last[11] ? parseFloat(last[11]).toFixed(1) : '—';
+    const dayChange = prev ? (lastW - parseFloat(prev[2])).toFixed(1) : '—';
+
+    document.getElementById('start-weight').textContent = startW.toFixed(1);
+    document.getElementById('total-loss').textContent = totalLoss;
+    document.getElementById('goal-weight').textContent = goal;
+    document.getElementById('bmi').textContent = bmi;
+    document.getElementById('day-change').textContent =
+      (dayChange === '—' ? '—' : (parseFloat(dayChange) > 0 ? '+' : '') + dayChange);
+
+    // Last 30 days chart
+    const last30 = withWeight.slice(-30);
+    const labels = last30.map(r => {
+      const d = r[1];
+      return d ? `${d[1]}/${d[0]}` : '';
+    });
+    const weights = last30.map(r => parseFloat(r[2]));
+
+    const ctx = document.getElementById('chart').getContext('2d');
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: weights,
+          borderColor: 'rgba(255,140,90,0.8)',
+          backgroundColor: 'rgba(255,140,90,0.1)',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: 'rgba(255,140,90,0.8)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: 'rgba(255,255,255,0.4)', maxTicksLimit: 10 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color: 'rgba(255,255,255,0.4)' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+      }
+    });
+
+    // Trend
+    const change = last30.length > 1 ? (weights[weights.length-1] - weights[0]).toFixed(1) : 0;
+    const arrow = change < 0 ? '↓' : '↑';
+    document.getElementById('trend').textContent =
+      `${last30.length}-day trend: ${arrow} ${Math.abs(change)} lbs (${Math.abs((change/weights[0])*100).toFixed(1)}%)`;
+
+  } catch(e) {
+    document.getElementById('current-date').textContent = 'Error loading data';
+    console.error(e);
+  }
+}
+
+async function logWeight() {
+  const input = document.getElementById('weight-input');
+  const val = parseFloat(input.value);
+  const msg = document.getElementById('message');
+  if (!val || isNaN(val)) { msg.innerHTML = '<div class="error">Enter a valid weight</div>'; return; }
+
+  try {
+    const resp = await fetch('/api/weight', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ weight: val })
+    });
+    const result = await resp.json();
+    if (result.status === 'ok') {
+      msg.innerHTML = `<div class="success">Logged ${val} lbs ✓ — refreshing…</div>`;
+      input.value = '';
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      msg.innerHTML = `<div class="error">Failed: ${result.error || 'Unknown error'}</div>`;
+    }
+  } catch(e) {
+    msg.innerHTML = `<div class="error">Network error: ${e.message}</div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>

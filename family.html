@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Satory</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+.bg {
+  position: fixed;
+  inset: 0;
+  background: url('/openclaw/static/bg.jpg') center/cover no-repeat;
+  z-index: 0;
+}
+.bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.25) 100%);
+}
+.content {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  max-width: 600px;
+}
+.card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 24px;
+  background: rgba(20, 10, 15, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 140, 90, 0.15);
+  border-radius: 14px;
+  text-decoration: none;
+  color: rgba(255, 220, 200, 0.95);
+  transition: all 0.25s ease;
+  flex: 1;
+  min-width: 260px;
+  max-width: 320px;
+}
+.card:hover {
+  background: rgba(20, 10, 15, 0.6);
+  border-color: rgba(255, 140, 90, 0.35);
+  transform: translateY(-2px);
+}
+.card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  background: rgba(255, 100, 60, 0.2);
+}
+.card-text { flex: 1; }
+.card-title {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+.card-desc {
+  font-size: 12px;
+  color: rgba(255, 180, 150, 0.5);
+}
+.card-arrow {
+  font-size: 18px;
+  color: rgba(255, 140, 90, 0.3);
+  transition: all 0.2s;
+}
+.card:hover .card-arrow {
+  color: rgba(255, 140, 90, 0.7);
+  transform: translateX(3px);
+}
+.logout {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 2;
+  color: rgba(255, 180, 150, 0.4);
+  text-decoration: none;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.logout:hover {
+  color: rgba(255, 180, 150, 0.8);
+  background: rgba(0,0,0,0.2);
+}
+@media (max-width: 480px) {
+  .cards { flex-direction: column; }
+  .card { min-width: unset; width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<a href="/auth/logout" class="logout">Sign out</a>
+<div class="content">
+  <div class="cards">
+    <a href="/mc/" class="card">
+      <div class="card-icon">🚀</div>
+      <div class="card-text">
+        <div class="card-title">Mission Control</div>
+        <div class="card-desc">Workspace, files, and system monitoring</div>
+      </div>
+      <span class="card-arrow">›</span>
+    </a>
+    <a href="/openclaw/" class="card">
+      <div class="card-icon">🤖</div>
+      <div class="card-text">
+        <div class="card-title">FastAPI Admin</div>
+        <div class="card-desc">Agents, memory, cron jobs, logs</div>
+      </div>
+      <span class="card-arrow">›</span>
+    </a>
+    <a href="https://satory.ddns.net" target="_blank" class="card">
+      <div class="card-icon">🌐</div>
+      <div class="card-text">
+        <div class="card-title">Router Admin</div>
+        <div class="card-desc">TP-Link ER605 / Omada</div>
+      </div>
+      <span class="card-arrow">›</span>
+    </a>
+    <a href="https://dash.cloudflare.com" target="_blank" class="card">
+      <div class="card-icon">☁️</div>
+      <div class="card-text">
+        <div class="card-title">Cloudflare</div>
+        <div class="card-desc">DNS, tunnels, security</div>
+      </div>
+      <span class="card-arrow">›</span>
+    </a>
+    <a href="https://my.nextdns.io" target="_blank" class="card">
+      <div class="card-icon">🛡️</div>
+      <div class="card-text">
+        <div class="card-title">NextDNS</div>
+        <div class="card-desc">DNS filtering & analytics</div>
+      </div>
+      <span class="card-arrow">›</span>
+    </a>
+    <a href="https://www.noip.com/members/dns/" target="_blank" class="card">
+      <div class="card-icon">📡</div>
+      <div class="card-text">
+        <div class="card-title">No-IP</div>
+        <div class="card-desc">Dynamic DNS management</div>
+      </div>
+      <span class="card-arrow">›</span>
+    </a>
+    <a href="https://discord.com/channels/@me" target="_blank" class="card">
+      <div class="card-icon">💬</div>
+      <div class="card-text">
+        <div class="card-title">Discord</div>
+        <div class="card-desc">Agent communications</div>
+      </div>
+      <span class="card-arrow">›</span>
+    </a>
+    <a href="/fridge/" class="card">
+      <div class="card-icon">🧊</div>
+      <div class="card-text">
+        <div class="card-title">Fridge</div>
+        <div class="card-desc">Kitchen inventory & whiteboard</div>
+      </div>
+      <span class="card-arrow">›</span>
+    </a>
+  </div>
+</div>
+</body>
+</html>

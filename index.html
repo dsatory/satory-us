@@ -1,0 +1,2099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Dashboard</title>
+<style>
+:root {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --primary: #6366f1;
+  --primary-light: #eef2ff;
+  --success: #10b981;
+  --success-light: #ecfdf5;
+  --warning: #f59e0b;
+  --warning-light: #fffbeb;
+  --danger: #ef4444;
+  --danger-light: #fef2f2;
+  --purple: #8b5cf6;
+  --purple-light: #f5f3ff;
+  --cyan: #06b6d4;
+  --cyan-light: #ecfeff;
+  --orange: #f97316;
+  --orange-light: #fff7ed;
+  --lawrence: #e84430;
+  --lawrence-light: #fef2f0;
+  --gromit: #3b82f6;
+  --gromit-light: #eff6ff;
+  --wallace: #eab308;
+  --wallace-light: #fefce8;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.03);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.app { max-width: 1400px; margin: 0 auto; padding: 16px; }
+
+/* Header */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.version-badge {
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 12px;
+}
+.refresh-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+.refresh-btn:hover { border-color: var(--primary); color: var(--primary); }
+.refresh-btn.spinning svg { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Navigation tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 4px;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tab {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--text); background: var(--bg); }
+.tab.active { background: var(--primary); color: white; }
+
+/* Panels */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Grid layouts */
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+/* Cards */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  transition: box-shadow 0.2s;
+}
+.card:hover { box-shadow: var(--shadow-md); }
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+.card-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+/* Status indicators */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.status-online { background: var(--success-light); color: var(--success); }
+.status-offline { background: var(--danger-light); color: var(--danger); }
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.status-online .status-dot { animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* Agent cards */
+.agent-card {
+  border-left: 4px solid var(--primary);
+  position: relative;
+}
+.agent-card[data-agent="main"] { border-left-color: var(--lawrence); }
+.agent-card[data-agent="gromit"] { border-left-color: var(--gromit); }
+.agent-card[data-agent="wallace"] { border-left-color: var(--wallace); }
+.agent-card[data-agent="memory-distiller"] { border-left-color: var(--cyan); }
+.agent-card[data-agent="rescue"] { border-left-color: var(--danger); }
+.agent-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-transform: capitalize;
+}
+.agent-model {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.agent-fallbacks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.fallback-tag {
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--text-muted);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+/* Service cards */
+.service-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.service-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.service-info { flex: 1; }
+.service-name { font-weight: 600; font-size: 15px; }
+.service-port { font-size: 12px; color: var(--text-muted); }
+
+/* Memory list */
+.memory-list { list-style: none; }
+.memory-item {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.memory-item:last-child { border-bottom: none; }
+.memory-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--purple);
+  margin-top: 7px;
+  flex-shrink: 0;
+}
+.memory-score {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg);
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* Calendar */
+.cal-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.cal-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cal-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.cal-nav-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text);
+  transition: all 0.15s;
+}
+.cal-nav-btn:hover { background: var(--primary-light); border-color: var(--primary); }
+.cal-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin-left: 8px;
+}
+.cal-legend {
+  display: flex;
+  gap: 10px;
+}
+.cal-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.cal-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.cal-view-toggle {
+  display: flex;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 3px;
+  border: 1px solid var(--border);
+}
+.cal-view-btn {
+  padding: 5px 14px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cal-view-btn:hover { color: var(--text); }
+.cal-view-btn.active { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+
+/* Day/Week grid */
+.cal-day-grid {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.cal-week-grid {
+  display: grid;
+  grid-template-columns: 56px repeat(7, 1fr);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.cal-day-header {
+  background: var(--bg);
+  padding: 8px 4px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.cal-day-header.today { color: var(--primary); }
+.cal-day-header .day-num {
+  display: block;
+  font-size: 18px;
+  color: var(--text);
+  line-height: 1.2;
+}
+.cal-day-header.today .day-num {
+  background: var(--primary);
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px auto;
+}
+.cal-hour-label {
+  padding: 0 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+  border-right: 1px solid var(--border);
+  height: 72px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding-top: 2px;
+  background: var(--card);
+}
+.cal-hour-cell {
+  height: 72px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  position: relative;
+  background: var(--card);
+}
+.cal-hour-cell:last-child { border-right: none; }
+.cal-event {
+  position: absolute;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  z-index: 1;
+  line-height: 1.4;
+  border-left: 3px solid;
+  transition: opacity 0.15s;
+  min-height: 18px;
+}
+.cal-event:hover { opacity: 0.85; }
+.cal-event.main { background: var(--lawrence-light); color: var(--lawrence); border-left-color: var(--lawrence); }
+.cal-event.gromit { background: var(--gromit-light); color: var(--gromit); border-left-color: var(--gromit); }
+.cal-event.wallace { background: var(--wallace-light); color: var(--wallace); border-left-color: var(--wallace); }
+.cal-event.other { background: var(--bg); color: var(--text-muted); border-left-color: var(--border); }
+.cal-event.disabled { opacity: 0.35; text-decoration: line-through; }
+.cal-now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--danger);
+  z-index: 3;
+  pointer-events: none;
+}
+.cal-now-line::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+/* List view */
+.cal-list { list-style: none; }
+.cal-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  transition: background 0.1s;
+}
+.cal-list-item:hover { background: var(--bg); }
+.cal-list-item:last-child { border-bottom: none; }
+.cal-list-item.disabled { opacity: 0.4; }
+.cal-list-time {
+  width: 50px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: right;
+  flex-shrink: 0;
+}
+.cal-list-bar {
+  width: 4px;
+  height: 24px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.cal-list-name { flex: 1; font-weight: 500; }
+.cal-list-agent {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-muted);
+}
+.cal-list-schedule {
+  font-size: 11px;
+  font-family: 'SF Mono', monospace;
+  color: var(--text-muted);
+}
+
+/* Quick links */
+.link-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--text);
+  padding: 16px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.link-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.link-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: white;
+}
+.link-name { font-weight: 600; font-size: 15px; }
+.link-url { font-size: 12px; color: var(--text-muted); }
+
+/* Logs */
+.log-container {
+  background: #1e293b;
+  border-radius: var(--radius);
+  padding: 16px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #e2e8f0;
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+.log-line { white-space: pre; }
+.log-line .timestamp { color: #64748b; }
+.log-line .component { color: #38bdf8; }
+.log-line .error { color: #f87171; }
+.log-line .info { color: #4ade80; }
+
+/* Tooltip */
+.tooltip {
+  position: fixed;
+  background: var(--text);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 1000;
+  max-width: 250px;
+  display: none;
+}
+
+/* Loading */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--text-muted);
+  gap: 8px;
+}
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app { padding: 10px; }
+  header h1 { font-size: 20px; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .cal-legend { display: none; }
+  .cal-toolbar { flex-direction: column; align-items: stretch; }
+  .cal-toolbar-right { justify-content: space-between; }
+  .tabs { gap: 2px; }
+  .tab { padding: 6px 12px; font-size: 13px; }
+  .card { padding: 14px; }
+  .header-meta { gap: 6px; }
+}
+/* System Monitor */
+.system-card { padding: 16px; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); }
+.sys-metric { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+.sys-metric strong { color: var(--text); }
+.progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-top: 4px; }
+.progress-fill { height: 100%; background: var(--primary); transition: width 0.3s; }
+.sys-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+.sys-table th, .sys-table td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); }
+.sys-table th { color: var(--text-muted); font-weight: 500; }
+.sys-table tr:hover td { background: var(--bg); }
+
+/* File Browser */
+.file-browser { display: flex; flex-direction: column; height: 75vh; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.file-nav { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: var(--bg); }
+.breadcrumb { font-size: 14px; color: var(--primary); cursor: pointer; }
+.breadcrumb:hover { text-decoration: underline; }
+.breadcrumb-sep { color: var(--text-muted); }
+.file-content { display: flex; flex: 1; overflow: hidden; }
+.file-list { flex: 1; overflow-y: auto; padding: 0; margin: 0; list-style: none; border-right: 1px solid var(--border); }
+.file-item { display: flex; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 14px; }
+.file-item:hover { background: var(--bg); }
+.file-icon { margin-right: 12px; font-size: 18px; width: 20px; text-align: center; }
+.file-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-size { color: var(--text-muted); font-size: 12px; margin-right: 16px; }
+.file-date { color: var(--text-muted); font-size: 12px; }
+.file-viewer { flex: 1.5; padding: 16px; overflow-y: auto; background: var(--card); }
+.file-viewer pre { margin: 0; font-family: monospace; font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+
+/* Direct Chat */
+.chat-panel { display: flex; flex-direction: column; height: 75vh; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.chat-msg { max-width: 80%; padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+.chat-msg.user { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 4px; }
+.chat-msg.assistant { align-self: flex-start; background: var(--bg); color: var(--text); border-bottom-left-radius: 4px; border: 1px solid var(--border); }
+.chat-input-area { padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 12px; background: var(--bg); }
+.chat-input-area input { flex: 1; padding: 10px 16px; border: 1px solid var(--border); border-radius: 20px; outline: none; font-size: 14px; }
+.chat-input-area input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
+.chat-input-area button { padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: 500; }
+.chat-input-area button:hover { background: #4f46e5; }
+.chat-input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>OpenClaw</h1>
+    <div class="header-meta">
+      <span class="version-badge" id="version">...</span>
+      <span id="last-update"></span>
+      <button class="refresh-btn" onclick="refreshAll()" id="refresh-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showPanel('overview')">Overview</button>
+    <button class="tab" onclick="showPanel('agents')">Agents</button>
+    <button class="tab" onclick="showPanel('schedule')">Schedule</button>
+    <button class="tab" onclick="showPanel('memory')">Memory</button>
+    <button class="tab" onclick="showPanel('logs')">Logs</button>
+    <button class="tab" onclick="showPanel('links')">Links</button>
+    <button class="tab" onclick="showPanel('office')">Office</button>
+    <button class="tab" onclick="showPanel('files')">Files</button>
+    <button class="tab" onclick="showPanel('system')">System</button>
+    <button class="tab" onclick="showPanel('chat')">Chat</button>
+  </div>
+
+  <!-- Overview Panel -->
+  <div class="panel active" id="panel-overview">
+    <div class="grid grid-4" id="service-cards" style="margin-bottom: 16px"></div>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Agents</span>
+        </div>
+        <div id="overview-agents"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Recent Memories</span>
+          <span class="card-value" id="memory-count" style="font-size:16px"></span>
+        </div>
+        <ul class="memory-list" id="overview-memories"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agents Panel -->
+  <div class="panel" id="panel-agents">
+    <div class="grid grid-2" id="agent-cards"></div>
+  </div>
+
+  <!-- Schedule Panel -->
+  <div class="panel" id="panel-schedule">
+    <div class="card">
+      <div class="cal-toolbar">
+        <div class="cal-toolbar-left">
+          <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+          <button class="cal-nav-btn" onclick="calNav(0)">Today</button>
+          <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+          <span class="cal-title" id="cal-title"></span>
+        </div>
+        <div class="cal-toolbar-right">
+          <div class="cal-legend">
+            <span class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--lawrence)"></span>Lawrence</span>
+            <span class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--gromit)"></span>Gromit</span>
+            <span class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--wallace)"></span>Wallace</span>
+          </div>
+          <div class="cal-view-toggle">
+            <button class="cal-view-btn active" onclick="setCalView('day')" id="btn-day">Day</button>
+            <button class="cal-view-btn" onclick="setCalView('week')" id="btn-week">Week</button>
+            <button class="cal-view-btn" onclick="setCalView('list')" id="btn-list">List</button>
+          </div>
+        </div>
+      </div>
+      <div id="cal-container"></div>
+    </div>
+  </div>
+
+  <!-- Memory Panel -->
+  <div class="panel" id="panel-memory">
+    <div class="grid grid-3" style="margin-bottom:16px" id="memory-stats"></div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">All Memories</span>
+      </div>
+      <ul class="memory-list" id="memory-list"></ul>
+    </div>
+  </div>
+
+  <!-- Logs Panel -->
+  <div class="panel" id="panel-logs">
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <span class="card-title">Gateway Logs</span>
+        <button class="refresh-btn" onclick="loadLogs()">Refresh</button>
+      </div>
+      <div class="log-container" id="log-container"></div>
+    </div>
+  </div>
+
+  <!-- Office Panel -->
+  <div class="panel" id="panel-office">
+    <div class="card" style="padding:0;overflow:hidden;position:relative;background:#f0efe8">
+      <canvas id="office-canvas" style="width:100%;height:70vh;display:block;border-radius:var(--radius)"></canvas>
+      <div id="office-legend" style="position:absolute;bottom:16px;left:16px;display:flex;gap:12px"></div>
+    </div>
+  </div>
+
+  <!-- Links Panel -->
+  <div class="panel" id="panel-links">
+    <div class="grid grid-2" id="link-cards"></div>
+  </div>
+
+  <!-- Files Panel -->
+  <div class="panel" id="panel-files">
+    <div class="file-browser">
+      <div class="file-nav" id="file-nav">
+        <!-- Breadcrumbs -->
+      </div>
+      <div class="file-content">
+        <ul class="file-list" id="file-list"></ul>
+        <div class="file-viewer" id="file-viewer">
+          <div style="color:var(--text-muted);text-align:center;margin-top:40px">Select a file to view</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Panel -->
+  <div class="panel" id="panel-system">
+    <div class="grid grid-3" id="system-cards"></div>
+    <div class="system-card" style="margin-top:16px">
+      <div class="sys-metric" style="font-size:16px;margin-bottom:0"><strong>Top Processes</strong></div>
+      <table class="sys-table">
+        <thead>
+          <tr>
+            <th>PID</th>
+            <th>Name</th>
+            <th>CPU %</th>
+            <th>Memory (MB)</th>
+          </tr>
+        </thead>
+        <tbody id="system-processes"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Chat Panel -->
+  <div class="panel" id="panel-chat">
+    <div class="chat-panel">
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-msg assistant">Hello! I'm connected to the OpenClaw Gateway. How can I help you?</div>
+      </div>
+      <div class="chat-input-area">
+        <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
+        <button id="chat-send-btn" onclick="sendChatMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+window.data = { agents: [], cron: [], memory: {}, services: [], config: {}, logs: [] };
+let data = window.data;
+
+window.showPanel = showPanel;
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  // Highlight the matching tab
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.textContent.trim().toLowerCase() === name) t.classList.add('active');
+  });
+  if (name === 'logs' && data.logs.length === 0) loadLogs();
+}
+
+async function fetchJSON(url) {
+  try {
+    const resp = await fetch(url);
+    return await resp.json();
+  } catch (e) {
+    console.error('Fetch failed:', url, e);
+    return null;
+  }
+}
+
+async function refreshAll() {
+  const btn = document.getElementById('refresh-btn');
+  btn.classList.add('spinning');
+
+  const [agents, cron, memory, services, config] = await Promise.all([
+    fetchJSON('/api/agents'),
+    fetchJSON('/api/cron'),
+    fetchJSON('/api/memory'),
+    fetchJSON('/api/services'),
+    fetchJSON('/api/config'),
+  ]);
+
+  if (agents) data.agents = agents.agents;
+  if (cron) data.cron = cron.jobs;
+  if (memory) data.memory = memory;
+  if (services) data.services = services.services;
+  if (config) data.config = config;
+
+  render();
+  btn.classList.remove('spinning');
+  document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+}
+
+window.render = render;
+function render() {
+  renderVersion();
+  renderServices();
+  renderOverviewAgents();
+  renderOverviewMemories();
+  renderAgents();
+  renderSchedule();
+  renderMemory();
+  renderLinks();
+}
+
+function renderVersion() {
+  document.getElementById('version').textContent = 'v' + (data.config.version || '?');
+}
+
+function renderServices() {
+  const colors = { Gateway: 'var(--primary)', Mem0: 'var(--purple)', Qdrant: 'var(--cyan)' };
+  const icons = { Gateway: '⚡', Mem0: '🧠', Qdrant: '🔮' };
+  const el = document.getElementById('service-cards');
+  el.innerHTML = data.services.map(s => `
+    <div class="card service-card">
+      <div class="service-icon" style="background:${colors[s.name] || 'var(--text-muted)'}">
+        ${icons[s.name] || '●'}
+      </div>
+      <div class="service-info">
+        <div class="service-name">${s.name}</div>
+        <div class="service-port">:${s.port}</div>
+      </div>
+      <span class="status status-${s.status}">
+        <span class="status-dot"></span>${s.status}
+      </span>
+    </div>
+  `).join('');
+}
+
+function renderOverviewAgents() {
+  const el = document.getElementById('overview-agents');
+  const colors = { main: 'var(--lawrence)', gromit: 'var(--gromit)', wallace: 'var(--wallace)', 'memory-distiller': 'var(--cyan)', rescue: 'var(--danger)' };
+  const names = { main: 'Lawrence', gromit: 'Gromit', wallace: 'Wallace', 'memory-distiller': 'Distiller', rescue: 'Rescue' };
+  el.innerHTML = data.agents.map(a => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div style="width:4px;height:32px;border-radius:2px;background:${colors[a.id] || 'var(--text-muted)'}"></div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:14px">${names[a.id] || a.id}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${shortModel(a.primary)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderOverviewMemories() {
+  const el = document.getElementById('overview-memories');
+  const count = document.getElementById('memory-count');
+  const mems = (data.memory.memories || []).slice(0, 5);
+  count.textContent = (data.memory.count || 0) + ' total';
+  el.innerHTML = mems.map(m => `
+    <li class="memory-item">
+      <span class="memory-bullet"></span>
+      <span>${m.memory}</span>
+    </li>
+  `).join('') || '<li class="memory-item" style="color:var(--text-muted)">No memories yet</li>';
+}
+
+function renderAgents() {
+  const el = document.getElementById('agent-cards');
+  const names = { main: 'Lawrence', gromit: 'Gromit', wallace: 'Wallace', 'memory-distiller': 'Distiller', rescue: 'Rescue' };
+  el.innerHTML = data.agents.map(a => `
+    <div class="card agent-card" data-agent="${a.id}">
+      <div class="agent-name">${names[a.id] || a.id}</div>
+      <div class="agent-model">Primary: ${shortModel(a.primary)}</div>
+      <div class="agent-fallbacks">
+        ${a.fallbacks.map(f => `<span class="fallback-tag">${shortModel(f)}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+let calView = 'day';
+let calDate = new Date();
+
+function setCalView(view) {
+  calView = view;
+  document.querySelectorAll('.cal-view-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + view).classList.add('active');
+  renderSchedule();
+}
+
+function calNav(dir) {
+  if (dir === 0) { calDate = new Date(); }
+  else if (calView === 'day') { calDate.setDate(calDate.getDate() + dir); }
+  else { calDate.setDate(calDate.getDate() + dir * 7); }
+  renderSchedule();
+}
+
+function agentClass(j) {
+  const aid = j.agentId || 'main';
+  if (aid === 'gromit') return 'gromit';
+  if (aid === 'wallace') return 'wallace';
+  if (aid === 'main') return 'main';
+  return 'other';
+}
+
+function agentColor(j) {
+  const cls = agentClass(j);
+  if (cls === 'main') return 'var(--lawrence)';
+  if (cls === 'gromit') return 'var(--gromit)';
+  if (cls === 'wallace') return 'var(--wallace)';
+  return 'var(--text-muted)';
+}
+
+function getJobsForDay(jobs, dow) {
+  // dow: 0=Sun, 6=Sat
+  return jobs.filter(j => {
+    if (!j.enabled || !j.schedule) return false;
+    const parts = j.schedule.split(/\s+/);
+    if (parts.length < 5) return false;
+    const dowField = parts[4];
+    if (dowField === '*') return true;
+    const dows = expandCronField(dowField, 0, 7);
+    return dows.includes(dow) || (dow === 0 && dows.includes(7));
+  });
+}
+
+function getJobTimes(job) {
+  const parsed = parseCron(job.schedule);
+  return parsed || [];
+}
+
+function renderSchedule() {
+  const container = document.getElementById('cal-container');
+  const title = document.getElementById('cal-title');
+  const jobs = data.cron;
+
+  if (calView === 'list') {
+    renderListView(container, title, jobs);
+  } else if (calView === 'day') {
+    renderDayView(container, title, jobs);
+  } else {
+    renderWeekView(container, title, jobs);
+  }
+}
+
+function layoutEvents(dayJobs, cellHeight) {
+  const events = [];
+  dayJobs.forEach(j => {
+    const times = getJobTimes(j);
+    times.forEach(t => {
+      events.push({ job: j, hour: t.hour, minute: t.minute });
+    });
+  });
+  // Group by hour, sort by minute, assign stacked index within each hour
+  const byHour = {};
+  events.forEach(e => {
+    if (!byHour[e.hour]) byHour[e.hour] = [];
+    byHour[e.hour].push(e);
+  });
+  const evHeight = 18; // min-height of an event in px
+  Object.values(byHour).forEach(group => {
+    group.sort((a, b) => a.minute - b.minute);
+    // Check which events visually overlap (their top positions are within evHeight px)
+    // Build overlap clusters
+    group.forEach(e => { e.top = (e.minute / 60) * cellHeight; e.col = 0; e.totalCols = 1; });
+    // Find connected clusters of overlapping events
+    const visited = new Set();
+    for (let i = 0; i < group.length; i++) {
+      if (visited.has(i)) continue;
+      const cluster = [i];
+      visited.add(i);
+      // Expand cluster: any event whose top is within evHeight of any cluster member
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (let j = 0; j < group.length; j++) {
+          if (visited.has(j)) continue;
+          for (const ci of cluster) {
+            if (Math.abs(group[j].top - group[ci].top) < evHeight) {
+              cluster.push(j);
+              visited.add(j);
+              changed = true;
+              break;
+            }
+          }
+        }
+      }
+      if (cluster.length > 1) {
+        // Sort cluster members by minute for consistent column assignment
+        cluster.sort((a, b) => group[a].minute - group[b].minute);
+        cluster.forEach((idx, col) => {
+          group[idx].col = col;
+          group[idx].totalCols = cluster.length;
+        });
+      }
+    }
+  });
+  return events;
+}
+
+function renderDayView(container, titleEl, jobs) {
+  const CH = 72;
+  const d = calDate;
+  const dow = d.getDay();
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  titleEl.textContent = `${dayNames[dow]}, ${months[d.getMonth()]} ${d.getDate()}`;
+
+  const dayJobs = getJobsForDay(jobs, dow);
+  const events = layoutEvents(dayJobs, CH);
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+
+  let html = '<div class="cal-day-grid">';
+  html += '<div class="cal-day-header"></div>';
+  html += `<div class="cal-day-header${isToday ? ' today' : ''}">
+    <span class="day-num">${d.getDate()}</span>
+    ${dayNames[dow].slice(0,3)}
+  </div>`;
+
+  for (let h = 0; h < 24; h++) {
+    html += `<div class="cal-hour-label">${h === 0 ? '12 AM' : h < 12 ? h + ' AM' : h === 12 ? '12 PM' : (h-12) + ' PM'}</div>`;
+    html += '<div class="cal-hour-cell">';
+
+    const hourEvents = events.filter(e => e.hour === h);
+    hourEvents.forEach(e => {
+      const top = (e.minute / 60) * CH;
+      const cls = agentClass(e.job);
+      const width = e.totalCols > 1 ? `${Math.floor(100 / e.totalCols) - 1}%` : 'calc(100% - 4px)';
+      const left = e.totalCols > 1 ? `${(e.col / e.totalCols) * 100}%` : '2px';
+      html += `<div class="cal-event ${cls}${e.job.enabled ? '' : ' disabled'}" style="top:${top}px;left:${left};width:${width}"
+        onmouseenter="showTooltip(event,'${e.job.name.replace(/'/g,"\\'")} — ${e.job.schedule}')"
+        onmouseleave="hideTooltip()">${e.minute.toString().padStart(2,'0')} ${e.job.name}</div>`;
+    });
+
+    if (isToday && now.getHours() === h) {
+      html += `<div class="cal-now-line" style="top:${(now.getMinutes() / 60) * CH}px"></div>`;
+    }
+
+    html += '</div>';
+  }
+  html += '</div>';
+  container.innerHTML = html;
+
+  if (isToday) {
+    const grid = container.querySelector('.cal-day-grid');
+    if (grid) grid.scrollTop = Math.max(0, now.getHours() * CH - 100);
+  }
+}
+
+function renderWeekView(container, titleEl, jobs) {
+  const CH = 72;
+  const d = new Date(calDate);
+  const startOfWeek = new Date(d);
+  startOfWeek.setDate(d.getDate() - d.getDay());
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  titleEl.textContent = `${months[startOfWeek.getMonth()]} ${startOfWeek.getDate()} – ${months[endOfWeek.getMonth()]} ${endOfWeek.getDate()}, ${endOfWeek.getFullYear()}`;
+
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const now = new Date();
+
+  // Pre-compute events per day-of-week
+  const dayEvents = {};
+  for (let i = 0; i < 7; i++) {
+    const dayJobs = getJobsForDay(jobs, i);
+    dayEvents[i] = layoutEvents(dayJobs, CH);
+  }
+
+  let html = '<div class="cal-week-grid">';
+
+  html += '<div class="cal-day-header"></div>';
+  for (let i = 0; i < 7; i++) {
+    const dd = new Date(startOfWeek);
+    dd.setDate(startOfWeek.getDate() + i);
+    const isToday = dd.toDateString() === now.toDateString();
+    html += `<div class="cal-day-header${isToday ? ' today' : ''}">
+      <span class="day-num">${dd.getDate()}</span>
+      ${dayNames[i]}
+    </div>`;
+  }
+
+  for (let h = 0; h < 24; h++) {
+    html += `<div class="cal-hour-label">${h === 0 ? '12a' : h < 12 ? h + 'a' : h === 12 ? '12p' : (h-12) + 'p'}</div>`;
+    for (let i = 0; i < 7; i++) {
+      const dd = new Date(startOfWeek);
+      dd.setDate(startOfWeek.getDate() + i);
+      const isToday = dd.toDateString() === now.toDateString();
+
+      html += '<div class="cal-hour-cell">';
+      const hourEvents = dayEvents[i].filter(e => e.hour === h);
+      hourEvents.forEach(e => {
+        const top = (e.minute / 60) * CH;
+        const cls = agentClass(e.job);
+        const width = e.totalCols > 1 ? `${Math.floor(100 / e.totalCols) - 1}%` : 'calc(100% - 4px)';
+        const left = e.totalCols > 1 ? `${(e.col / e.totalCols) * 100}%` : '2px';
+        html += `<div class="cal-event ${cls}${e.job.enabled ? '' : ' disabled'}" style="top:${top}px;left:${left};width:${width};font-size:10px"
+          onmouseenter="showTooltip(event,'${e.job.name.replace(/'/g,"\\'")} — ${e.job.schedule}')"
+          onmouseleave="hideTooltip()">${e.job.name.slice(0,12)}</div>`;
+      });
+      if (isToday && now.getHours() === h) {
+        html += `<div class="cal-now-line" style="top:${(now.getMinutes()/60)*CH}px"></div>`;
+      }
+      html += '</div>';
+    }
+  }
+  html += '</div>';
+  container.innerHTML = html;
+
+  if (now >= startOfWeek && now <= endOfWeek) {
+    const grid = container.querySelector('.cal-week-grid');
+    if (grid) grid.scrollTop = Math.max(0, now.getHours() * CH - 100);
+  }
+}
+
+function renderListView(container, titleEl, jobs) {
+  titleEl.textContent = 'All Cron Jobs';
+  const enabled = jobs.filter(j => j.enabled).length;
+
+  // Build time-sorted list
+  const entries = [];
+  jobs.forEach(j => {
+    const times = getJobTimes(j);
+    if (times.length > 0) {
+      const first = times[0];
+      entries.push({...j, hour: first.hour, minute: first.minute});
+    } else {
+      entries.push({...j, hour: 99, minute: 0});
+    }
+  });
+  entries.sort((a,b) => (b.enabled - a.enabled) || (a.hour - b.hour) || (a.minute - b.minute));
+
+  let html = `<div style="padding:8px 12px;font-size:13px;color:var(--text-muted);border-bottom:1px solid var(--border)">${enabled} active / ${jobs.length} total</div>`;
+  html += '<ul class="cal-list">';
+  entries.forEach(j => {
+    const time = j.hour < 24 ? `${j.hour.toString().padStart(2,'0')}:${j.minute.toString().padStart(2,'0')}` : '--:--';
+    html += `<li class="cal-list-item${j.enabled ? '' : ' disabled'}">
+      <span class="cal-list-time">${time}</span>
+      <span class="cal-list-bar" style="background:${agentColor(j)}"></span>
+      <span class="cal-list-name">${j.name}</span>
+      <span class="cal-list-agent">${j.agentId || 'main'}</span>
+      <span class="cal-list-schedule">${j.schedule || '-'}</span>
+    </li>`;
+  });
+  html += '</ul>';
+  container.innerHTML = html;
+}
+
+function parseCron(expr) {
+  if (!expr) return null;
+  try {
+    const parts = expr.split(/\s+/);
+    if (parts.length < 5) return null;
+    const [min, hr] = parts;
+    const minutes = expandCronField(min, 0, 59);
+    const hours = expandCronField(hr, 0, 23);
+    const results = [];
+    hours.forEach(h => minutes.forEach(m => results.push({hour: h, minute: m})));
+    return results;
+  } catch(e) { return null; }
+}
+
+window.expandCronField = expandCronField;
+function expandCronField(field, min, max) {
+  if (field === '*') return Array.from({length: max-min+1}, (_, i) => i + min);
+  const results = new Set();
+  field.split(',').forEach(part => {
+    const stepMatch = part.match(/^(.+)\/(\d+)$/);
+    if (stepMatch) {
+      const [, range, step] = stepMatch;
+      const s = parseInt(step);
+      let start = min, end = max;
+      if (range !== '*') {
+        const r = range.split('-');
+        start = parseInt(r[0]);
+        end = r.length > 1 ? parseInt(r[1]) : max;
+      }
+      for (let i = start; i <= end; i += s) results.add(i);
+    } else if (part.includes('-')) {
+      const [a, b] = part.split('-').map(Number);
+      for (let i = a; i <= b; i++) results.add(i);
+    } else {
+      results.add(parseInt(part));
+    }
+  });
+  return [...results].filter(n => !isNaN(n));
+}
+
+function renderMemory() {
+  const stats = document.getElementById('memory-stats');
+  const mem = data.memory;
+  stats.innerHTML = `
+    <div class="card">
+      <div class="card-title">Total Memories</div>
+      <div class="card-value" style="color:var(--purple)">${mem.count || 0}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Provider</div>
+      <div class="card-value" style="font-size:20px">${mem.provider || '-'}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Vector Store</div>
+      <div class="card-value" style="font-size:20px;display:flex;align-items:center;gap:8px">
+        ${mem.vectorStore || '-'}
+        <span class="status status-${mem.status === 'ok' ? 'online' : 'offline'}" style="font-size:12px">
+          <span class="status-dot"></span>${mem.status || 'unknown'}
+        </span>
+      </div>
+    </div>
+  `;
+
+  const list = document.getElementById('memory-list');
+  list.innerHTML = (mem.memories || []).map(m => `
+    <li class="memory-item">
+      <span class="memory-bullet"></span>
+      <span style="flex:1">${m.memory}</span>
+    </li>
+  `).join('') || '<li class="memory-item" style="color:var(--text-muted)">No memories stored</li>';
+}
+
+function renderLinks() {
+  const el = document.getElementById('link-cards');
+  const links = [
+    { name: 'Router Admin', url: 'https://satory.ddns.net', icon: '🌐', color: 'var(--primary)' },
+    { name: 'Cloudflare', url: 'https://dash.cloudflare.com', icon: '☁️', color: 'var(--orange)' },
+    { name: 'NextDNS', url: 'https://my.nextdns.io', icon: '🛡️', color: 'var(--success)' },
+    { name: 'No-IP', url: 'https://www.noip.com/members/dns/', icon: '📡', color: 'var(--cyan)' },
+    { name: 'Gateway Health', url: '/api/gateway', icon: '⚡', color: 'var(--success)' },
+    { name: 'Mem0 API Docs', url: 'http://127.0.0.1:8420/docs', icon: '🧠', color: 'var(--purple)' },
+  ];
+  el.innerHTML = links.map(l => `
+    <a href="${l.url}" target="_blank" rel="noopener" class="card link-card">
+      <div class="link-icon" style="background:${l.color}">${l.icon}</div>
+      <div>
+        <div class="link-name">${l.name}</div>
+        <div class="link-url">${l.url}</div>
+      </div>
+    </a>
+  `).join('');
+}
+
+async function loadLogs() {
+  const result = await fetchJSON('/api/logs?lines=100');
+  if (!result) return;
+  data.logs = result.logs;
+  const el = document.getElementById('log-container');
+  el.innerHTML = result.logs.map(line => {
+    let formatted = line
+      .replace(/^(\d{4}-\d{2}-\d{2}T[\d:.]+-\d{2}:\d{2})/, '<span class="timestamp">$1</span>')
+      .replace(/\[([^\]]+)\]/, '<span class="component">[$1]</span>')
+      .replace(/(error|Error|ERROR|✗)/g, '<span class="error">$1</span>')
+      .replace(/(✓|success|ready|registered)/gi, '<span class="info">$1</span>');
+    return `<div class="log-line">${formatted}</div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function shortModel(model) {
+  return (model || '')
+    .replace('minimax/', '')
+    .replace('google/', '')
+    .replace('openai-codex/', '')
+    .replace('openrouter/', '');
+}
+
+function showTooltip(e, text) {
+  const tt = document.getElementById('tooltip');
+  tt.textContent = text;
+  tt.style.display = 'block';
+  tt.style.left = e.pageX + 10 + 'px';
+  tt.style.top = e.pageY - 30 + 'px';
+}
+function hideTooltip() {
+  document.getElementById('tooltip').style.display = 'none';
+}
+
+/* System Monitor Logic */
+async function loadSystem() {
+  const sys = await fetchJSON('/api/system');
+  if (!sys || sys.error) return;
+  const cards = document.getElementById('system-cards');
+  
+  // Basic info card
+  cards.innerHTML = `
+    <div class="system-card">
+      <div class="sys-metric"><strong>Host</strong> <span>${sys.hostname} (${sys.platform})</span></div>
+      <div class="sys-metric"><strong>Uptime</strong> <span>${Math.floor(sys.uptime / 3600)}h ${Math.floor((sys.uptime % 3600)/60)}m</span></div>
+      <div class="sys-metric"><strong>Load Average</strong> <span>${sys.loadAvg.map(n=>n.toFixed(2)).join(', ')}</span></div>
+    </div>
+    <div class="system-card">
+      <div class="sys-metric"><strong>CPU (${sys.cpu.cores} cores)</strong> <span>${sys.cpu.avgUsage}%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width: ${sys.cpu.avgUsage}%"></div></div>
+    </div>
+    <div class="system-card">
+      <div class="sys-metric"><strong>Memory</strong> <span>${sys.memory.usedPct}% (${(sys.memory.used/1024/1024/1024).toFixed(1)}GB / ${(sys.memory.total/1024/1024/1024).toFixed(1)}GB)</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width: ${sys.memory.usedPct}%"></div></div>
+    </div>
+  `;
+  
+  const tbody = document.getElementById('system-processes');
+  tbody.innerHTML = sys.topProcesses.map(p => `
+    <tr>
+      <td>${p.pid}</td>
+      <td>${p.name}</td>
+      <td>${p.cpu}%</td>
+      <td>${p.mem}</td>
+    </tr>
+  `).join('');
+}
+
+/* File Browser Logic */
+async function loadFiles(p = '') {
+  const data = await fetchJSON('/api/files?p=' + encodeURIComponent(p));
+  if (!data || data.error) return;
+  
+  // Breadcrumbs
+  const nav = document.getElementById('file-nav');
+  const parts = p.split('/').filter(Boolean);
+  let crumbs = `<span class="breadcrumb" onclick="loadFiles('')">~</span>`;
+  let curr = '';
+  parts.forEach(part => {
+    curr += (curr ? '/' : '') + part;
+    const pathArg = curr;
+    crumbs += `<span class="breadcrumb-sep">/</span><span class="breadcrumb" onclick="loadFiles('${pathArg.replace(/'/g, "\\'")}')">${part}</span>`;
+  });
+  nav.innerHTML = crumbs;
+  
+  const list = document.getElementById('file-list');
+  if (data.type === 'dir') {
+    let itemsHtml = '';
+    if (p !== '') {
+      const parent = parts.slice(0, -1).join('/');
+      itemsHtml += `<li class="file-item" onclick="loadFiles('${parent.replace(/'/g, "\\'")}')"><div class="file-icon">📁</div><div class="file-name">..</div></li>`;
+    }
+    data.items.forEach(item => {
+      const itemPath = (p ? p + '/' : '') + item.name;
+      const icon = item.type === 'dir' ? '📁' : '📄';
+      const sizeStr = item.size != null ? (item.size > 1024*1024 ? (item.size/1024/1024).toFixed(1)+'MB' : Math.round(item.size/1024)+'KB') : '';
+      const dateStr = item.modified ? new Date(item.modified).toLocaleDateString() : '';
+      itemsHtml += `
+        <li class="file-item" onclick="${item.type==='dir' ? `loadFiles('${itemPath.replace(/'/g, "\\'")}')` : `viewFile('${itemPath.replace(/'/g, "\\'")}')`}">
+          <div class="file-icon">${icon}</div>
+          <div class="file-name" title="${item.name}">${item.name}</div>
+          <div class="file-size">${sizeStr}</div>
+          <div class="file-date">${dateStr}</div>
+        </li>
+      `;
+    });
+    list.innerHTML = itemsHtml;
+  }
+}
+
+async function viewFile(p) {
+  const data = await fetchJSON('/api/files?p=' + encodeURIComponent(p));
+  if (!data || data.error) {
+    document.getElementById('file-viewer').innerHTML = `<div style="color:var(--danger)">Error loading file. Maybe it's binary or too large.</div>`;
+    return;
+  }
+  
+  if (data.content !== undefined) {
+    const ext = data.ext || '';
+    let html = '';
+    if (['.jpg','.jpeg','.png','.gif','.webp'].includes(ext.toLowerCase())) {
+      html = `<img src="/api/files?p=${encodeURIComponent(p)}&raw=1" style="max-width:100%;border-radius:8px">`;
+    } else {
+      const escaped = data.content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      html = `<pre>${escaped}</pre>`;
+    }
+    document.getElementById('file-viewer').innerHTML = html;
+  }
+}
+
+/* Chat Logic */
+let chatMessages = [];
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const btn = document.getElementById('chat-send-btn');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  input.value = '';
+  input.disabled = true;
+  btn.disabled = true;
+  
+  chatMessages.push({ role: 'user', content: text });
+  renderChat();
+  
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: chatMessages })
+    });
+    const data = await res.json();
+    if (data.choices && data.choices.length > 0) {
+      chatMessages.push(data.choices[0].message);
+    } else {
+      chatMessages.push({ role: 'assistant', content: 'Sorry, I encountered an error.' });
+    }
+  } catch(e) {
+    chatMessages.push({ role: 'assistant', content: 'Connection failed.' });
+  }
+  
+  input.disabled = false;
+  btn.disabled = false;
+  input.focus();
+  renderChat();
+}
+
+function renderChat() {
+  const container = document.getElementById('chat-messages');
+  const html = `
+    <div class="chat-msg assistant">Hello! I'm connected to the OpenClaw Gateway. How can I help you?</div>
+    ${chatMessages.map(m => `
+      <div class="chat-msg ${m.role}">
+        ${m.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+      </div>
+    `).join('')}
+  `;
+  container.innerHTML = html;
+  container.scrollTop = container.scrollHeight;
+}
+
+const _sysOrigShow = window.showPanel;
+window.showPanel = function(name) {
+  _sysOrigShow(name);
+  if (name === 'system') loadSystem();
+  if (name === 'files' && !document.getElementById('file-list').innerHTML) loadFiles();
+};
+
+
+// Auto-refresh every 60s
+refreshAll();
+setInterval(refreshAll, 60000);
+</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+let scene, camera, renderer, controls, characters = {}, zzzParticles = [], clock;
+let officeInitialized = false;
+let desks = {}, cots = {}, screens = {};
+let agentStates = {}; // track current state to animate transitions
+
+function isAgentWorking(agentId) {
+  const jobs = window.data?.cron || [];
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes();
+  return jobs.some(j => {
+    if (!j.enabled) return false;
+    const aid = j.agentId || 'main';
+    if (aid !== agentId) return false;
+    if (!j.schedule) return false;
+    const parts = j.schedule.split(/\s+/);
+    if (parts.length < 5) return false;
+    try {
+      const mins = expandCronField(parts[0], 0, 59);
+      const hrs = expandCronField(parts[1], 0, 23);
+      // "Working" if a job runs within ±15 min of now
+      for (const jh of hrs) {
+        for (const jm of mins) {
+          const jobMin = jh * 60 + jm;
+          const nowMin = h * 60 + m;
+          if (Math.abs(jobMin - nowMin) < 15) return true;
+        }
+      }
+    } catch(e) {}
+    return false;
+  });
+}
+
+function box(w, h, d, color) {
+  const geo = new THREE.BoxGeometry(w, h, d);
+  const mat = new THREE.MeshLambertMaterial({ color });
+  return new THREE.Mesh(geo, mat);
+}
+
+function buildRoom() {
+  // Severance-style: stark white, sterile, fluorescent
+  // Floor — pale industrial carpet
+  const floor = box(24, 0.2, 18, 0xd5d5cc);
+  floor.position.y = -0.1;
+  scene.add(floor);
+  // Subtle carpet grid lines
+  for (let x = -11; x <= 11; x += 2) {
+    const line = box(0.02, 0.02, 18, 0xc8c8bf);
+    line.position.set(x, 0.02, 0);
+    scene.add(line);
+  }
+  for (let z = -8; z <= 8; z += 2) {
+    const line = box(24, 0.02, 0.02, 0xc8c8bf);
+    line.position.set(0, 0.02, z);
+    scene.add(line);
+  }
+  // Walls — clean white with slight warmth
+  const wallBack = box(24, 8, 0.3, 0xf0efe8);
+  wallBack.position.set(0, 4, -9);
+  scene.add(wallBack);
+  const wallLeft = box(0.3, 8, 18, 0xeeedE6);
+  wallLeft.position.set(-12, 4, 0);
+  scene.add(wallLeft);
+  const wallRight = box(0.3, 8, 18, 0xeeedE6);
+  wallRight.position.set(12, 4, 0);
+  scene.add(wallRight);
+  // Ceiling
+  const ceiling = box(24, 0.15, 18, 0xf5f5f0);
+  ceiling.position.y = 8;
+  scene.add(ceiling);
+  // Baseboard trim
+  [[-12, 0.15, 0, 0.1, 0.3, 18], [12, 0.15, 0, 0.1, 0.3, 18], [0, 0.15, -9, 24, 0.3, 0.1]].forEach(([x,y,z,w,h,d]) => {
+    const trim = box(w, h, d, 0xc0bfb8);
+    trim.position.set(x, y, z);
+    scene.add(trim);
+  });
+  // Crown molding
+  [[-12, 7.85, 0, 0.15, 0.15, 18], [12, 7.85, 0, 0.15, 0.15, 18], [0, 7.85, -9, 24, 0.15, 0.15]].forEach(([x,y,z,w,h,d]) => {
+    const crown = box(w, h, d, 0xe0dfd8);
+    crown.position.set(x, y, z);
+    scene.add(crown);
+  });
+  // Fluorescent light panels (Severance's stark overhead lighting)
+  [[-5, 0], [0, 0], [5, 0]].forEach(([x, z]) => {
+    const fixture = box(3.5, 0.08, 0.6, 0xe8e8e0);
+    fixture.position.set(x, 7.9, z);
+    scene.add(fixture);
+    const tube = box(3.2, 0.03, 0.3, 0xffffff);
+    tube.material.emissive = new THREE.Color(0xffffff);
+    tube.material.emissiveIntensity = 0.8;
+    tube.position.set(x, 7.85, z);
+    scene.add(tube);
+  });
+  // Lumon-style motivational plaque on back wall
+  const plaque = box(2.5, 0.8, 0.05, 0x2a3a4a);
+  plaque.position.set(0, 5.5, -8.82);
+  scene.add(plaque);
+  const plaqueInner = box(2.2, 0.55, 0.03, 0x1e2d3d);
+  plaqueInner.position.set(0, 5.5, -8.79);
+  scene.add(plaqueInner);
+  // Clock on wall
+  const clockFace = box(0.7, 0.7, 0.08, 0xffffff);
+  clockFace.position.set(7, 5.5, -8.82);
+  scene.add(clockFace);
+  const clockRim = box(0.8, 0.8, 0.06, 0x333333);
+  clockRim.position.set(7, 5.5, -8.85);
+  scene.add(clockRim);
+  // Filing cabinet in corner
+  const cabinet = box(0.8, 2.5, 0.6, 0xb0b0a8);
+  cabinet.position.set(-10.5, 1.25, -7.5);
+  scene.add(cabinet);
+  [0.5, 1.1, 1.7, 2.3].forEach(y => {
+    const handle = box(0.3, 0.04, 0.08, 0x888880);
+    handle.position.set(-10.5, y, -7.15);
+    scene.add(handle);
+  });
+  // Water cooler
+  const coolerBase = box(0.5, 1.2, 0.5, 0xdddddd);
+  coolerBase.position.set(10.5, 0.6, -7.5);
+  scene.add(coolerBase);
+  const coolerJug = box(0.4, 0.7, 0.4, 0xaaddee);
+  coolerJug.material.transparent = true;
+  coolerJug.material.opacity = 0.5;
+  coolerJug.position.set(10.5, 1.55, -7.5);
+  scene.add(coolerJug);
+}
+
+function buildDesk(x, z) {
+  const group = new THREE.Group();
+  // Severance-style clean white desk
+  const top = box(3, 0.12, 1.8, 0xf8f8f4);
+  top.position.set(0, 1.8, 0);
+  group.add(top);
+  // Thin metal legs
+  [[-1.3, -0.7], [1.3, -0.7], [-1.3, 0.7], [1.3, 0.7]].forEach(([lx, lz]) => {
+    const leg = box(0.06, 1.8, 0.06, 0xb0b0a8);
+    leg.position.set(lx, 0.9, lz);
+    group.add(leg);
+  });
+  // Retro CRT-style monitor (Severance uses old Lumon terminals)
+  const monitorBody = box(1.3, 1.0, 0.9, 0xd0cfc8);
+  monitorBody.position.set(0, 2.4, -0.3);
+  group.add(monitorBody);
+  const screenBezel = box(1.15, 0.82, 0.05, 0x222222);
+  screenBezel.position.set(0, 2.45, 0.17);
+  group.add(screenBezel);
+  const screenFace = box(1.0, 0.7, 0.03, 0x0a1a0a);
+  screenFace.material.emissive = new THREE.Color(0x000000);
+  screenFace.material.emissiveIntensity = 0;
+  screenFace.position.set(0, 2.45, 0.2);
+  screenFace.name = 'screenFace';
+  group.add(screenFace);
+  // Keyboard — old-style beige
+  const kb = box(0.8, 0.06, 0.3, 0xd5d0c0);
+  kb.position.set(0, 1.9, 0.6);
+  group.add(kb);
+  group.position.set(x, 0, z);
+  scene.add(group);
+  return group;
+}
+
+function buildCot(x, z) {
+  const group = new THREE.Group();
+  // Frame
+  const base = box(2.2, 0.1, 1, 0x5a5a5a);
+  base.position.y = 0.35;
+  group.add(base);
+  // Legs
+  [[-0.95, -0.4], [0.95, -0.4], [-0.95, 0.4], [0.95, 0.4]].forEach(([lx, lz]) => {
+    const leg = box(0.08, 0.35, 0.08, 0x444444);
+    leg.position.set(lx, 0.17, lz);
+    group.add(leg);
+  });
+  // Mattress
+  const mattress = box(2.0, 0.15, 0.85, 0x4a5568);
+  mattress.position.y = 0.48;
+  group.add(mattress);
+  // Pillow
+  const pillow = box(0.5, 0.12, 0.55, 0xcbd5e1);
+  pillow.position.set(-0.7, 0.6, 0);
+  group.add(pillow);
+  // Blanket (draped over half) — muted corporate blue-grey
+  const blanket = box(1.2, 0.08, 0.9, 0x7a8a9a);
+  blanket.material.transparent = true;
+  blanket.material.opacity = 0.8;
+  blanket.position.set(0.3, 0.58, 0);
+  group.add(blanket);
+  group.position.set(x, 0, z);
+  scene.add(group);
+  return group;
+}
+
+function buildLawrence() {
+  const group = new THREE.Group();
+  const RED = 0xe84430, DRED = 0xb8301f, ORANGE = 0xff6633;
+  // Body (lobster torso)
+  const body = box(1, 1.4, 0.8, RED);
+  body.position.y = 2.5;
+  group.add(body);
+  // Shell segments on body
+  for (let i = 0; i < 3; i++) {
+    const seg = box(1.05, 0.08, 0.85, DRED);
+    seg.position.set(0, 2.1 + i * 0.4, 0);
+    group.add(seg);
+  }
+  // Head
+  const head = box(0.8, 0.9, 0.8, RED);
+  head.position.y = 3.6;
+  group.add(head);
+  // Eyes (stalks!)
+  [[-0.2, 0.15], [0.2, 0.15]].forEach(([ex, ez]) => {
+    const stalk = box(0.08, 0.35, 0.08, DRED);
+    stalk.position.set(ex, 4.2, ez);
+    group.add(stalk);
+    const eye = box(0.15, 0.15, 0.15, 0x111111);
+    eye.position.set(ex, 4.45, ez);
+    group.add(eye);
+    const pupil = box(0.08, 0.08, 0.05, 0xffffff);
+    pupil.position.set(ex, 4.45, ez + 0.08);
+    group.add(pupil);
+  });
+  // Antennae
+  [[-0.15, 0], [0.15, 0]].forEach(([ax], i) => {
+    const ant = box(0.04, 0.6, 0.04, ORANGE);
+    ant.position.set(ax, 4.4, -0.1);
+    ant.rotation.z = (i === 0 ? 0.4 : -0.4);
+    ant.name = 'antenna' + i;
+    group.add(ant);
+  });
+  // Claws (big!)
+  [-1, 1].forEach(side => {
+    const arm = box(0.2, 0.2, 0.7, RED);
+    arm.position.set(side * 0.8, 2.7, 0.1);
+    group.add(arm);
+    const clawTop = box(0.25, 0.15, 0.5, DRED);
+    clawTop.position.set(side * 0.9, 2.85, -0.4);
+    clawTop.name = 'clawTop' + (side > 0 ? 'R' : 'L');
+    group.add(clawTop);
+    const clawBot = box(0.25, 0.15, 0.5, DRED);
+    clawBot.position.set(side * 0.9, 2.55, -0.4);
+    group.add(clawBot);
+  });
+  // Legs
+  [-0.3, 0, 0.3].forEach(lx => {
+    [-1, 1].forEach(side => {
+      const leg = box(0.15, 0.8, 0.15, DRED);
+      leg.position.set(side * 0.5, 1.2, lx);
+      group.add(leg);
+    });
+  });
+  // Tail
+  const tail = box(0.6, 0.2, 0.4, DRED);
+  tail.position.set(0, 1.6, 0.5);
+  group.add(tail);
+
+  group.agentId = 'main';
+  group.agentName = 'Lawrence';
+  return group;
+}
+
+function buildWallace() {
+  const group = new THREE.Group();
+  const SKIN = 0xf5d0a9, SHIRT = 0xeeeeee, PANTS = 0x8B6914;
+  // Legs
+  [-0.2, 0.2].forEach(lx => {
+    const leg = box(0.3, 0.9, 0.3, PANTS);
+    leg.position.set(lx, 0.45, 0);
+    group.add(leg);
+    const shoe = box(0.32, 0.2, 0.4, 0x333333);
+    shoe.position.set(lx, 0.1, 0.05);
+    group.add(shoe);
+  });
+  // Body
+  const body = box(0.9, 1.2, 0.6, SHIRT);
+  body.position.y = 1.5;
+  group.add(body);
+  // Collar / tie
+  const tie = box(0.15, 0.5, 0.05, 0x2d5a27);
+  tie.position.set(0, 1.8, 0.32);
+  group.add(tie);
+  // Arms
+  [-0.55, 0.55].forEach(ax => {
+    const arm = box(0.25, 1, 0.25, SHIRT);
+    arm.position.set(ax, 1.5, 0);
+    group.add(arm);
+    const hand = box(0.22, 0.2, 0.22, SKIN);
+    hand.position.set(ax, 0.9, 0);
+    group.add(hand);
+  });
+  // Head (big forehead like Wallace!)
+  const head = box(0.85, 1.1, 0.8, SKIN);
+  head.position.y = 2.8;
+  group.add(head);
+  // Big forehead extension
+  const forehead = box(0.87, 0.4, 0.5, SKIN);
+  forehead.position.set(0, 3.5, 0.05);
+  group.add(forehead);
+  // Eyes
+  [-0.18, 0.18].forEach(ex => {
+    const white = box(0.2, 0.22, 0.1, 0xffffff);
+    white.position.set(ex, 2.85, 0.42);
+    group.add(white);
+    const pupil = box(0.1, 0.12, 0.05, 0x111111);
+    pupil.position.set(ex, 2.83, 0.48);
+    group.add(pupil);
+  });
+  // Nose
+  const nose = box(0.2, 0.25, 0.2, SKIN);
+  nose.position.set(0, 2.6, 0.45);
+  group.add(nose);
+  // Mouth
+  const mouth = box(0.4, 0.08, 0.05, 0x994444);
+  mouth.position.set(0, 2.4, 0.42);
+  group.add(mouth);
+  // Ears
+  [-0.48, 0.48].forEach(ex => {
+    const ear = box(0.12, 0.25, 0.2, SKIN);
+    ear.position.set(ex, 2.7, 0);
+    group.add(ear);
+  });
+
+  group.agentId = 'wallace';
+  group.agentName = 'Wallace';
+  return group;
+}
+
+function buildGromit() {
+  const group = new THREE.Group();
+  const BROWN = 0xc4975a, DBROWN = 0xa07840, NOSE = 0x222222;
+  // Legs (dog walks on two in Wallace & Gromit)
+  [-0.18, 0.18].forEach(lx => {
+    const leg = box(0.28, 0.7, 0.28, BROWN);
+    leg.position.set(lx, 0.35, 0);
+    group.add(leg);
+    const paw = box(0.3, 0.15, 0.35, DBROWN);
+    paw.position.set(lx, 0.08, 0.05);
+    group.add(paw);
+  });
+  // Body
+  const body = box(0.8, 1, 0.55, BROWN);
+  body.position.y = 1.3;
+  group.add(body);
+  // Arms
+  [-0.5, 0.5].forEach(ax => {
+    const arm = box(0.22, 0.8, 0.22, BROWN);
+    arm.position.set(ax, 1.3, 0);
+    group.add(arm);
+    const paw = box(0.2, 0.18, 0.2, DBROWN);
+    paw.position.set(ax, 0.85, 0);
+    group.add(paw);
+  });
+  // Head
+  const head = box(0.75, 0.85, 0.75, BROWN);
+  head.position.y = 2.35;
+  group.add(head);
+  // Snout
+  const snout = box(0.4, 0.35, 0.35, DBROWN);
+  snout.position.set(0, 2.1, 0.45);
+  group.add(snout);
+  // Nose
+  const noseMesh = box(0.22, 0.18, 0.15, NOSE);
+  noseMesh.position.set(0, 2.3, 0.65);
+  group.add(noseMesh);
+  // Eyes
+  [-0.15, 0.15].forEach(ex => {
+    const white = box(0.2, 0.25, 0.1, 0xffffff);
+    white.position.set(ex, 2.5, 0.4);
+    group.add(white);
+    const pupil = box(0.1, 0.13, 0.05, 0x111111);
+    pupil.position.set(ex, 2.48, 0.46);
+    group.add(pupil);
+  });
+  // Floppy ears
+  [-0.42, 0.42].forEach(ex => {
+    const ear = box(0.18, 0.7, 0.3, DBROWN);
+    ear.position.set(ex, 2.2, -0.1);
+    ear.name = ex < 0 ? 'earL' : 'earR';
+    group.add(ear);
+  });
+  // Brow ridge (Gromit's expressive brow)
+  const brow = box(0.6, 0.1, 0.15, DBROWN);
+  brow.position.set(0, 2.7, 0.38);
+  brow.name = 'brow';
+  group.add(brow);
+
+  group.agentId = 'gromit';
+  group.agentName = 'Gromit';
+  return group;
+}
+
+function addZzz(charGroup) {
+  const z1 = box(0.15, 0.15, 0.05, 0xffffff);
+  z1.material = new THREE.MeshBasicMaterial({ color: 0xaaccff, transparent: true, opacity: 0.8 });
+  const startY = charGroup.position.y + 2;
+  z1.position.set(charGroup.position.x + 0.3 + Math.random() * 0.4, startY, charGroup.position.z);
+  z1.userData = { startY, age: 0, speed: 0.8 + Math.random() * 0.5, size: 0.1 + Math.random() * 0.15 };
+  scene.add(z1);
+  zzzParticles.push(z1);
+}
+
+function initOffice() {
+  if (officeInitialized) return;
+  officeInitialized = true;
+
+  const canvas = document.getElementById('office-canvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xf0efe8);
+  scene.fog = new THREE.Fog(0xf0efe8, 25, 40);
+
+  camera = new THREE.PerspectiveCamera(50, rect.width / rect.height, 0.1, 100);
+  camera.position.set(0, 8, 14);
+  camera.lookAt(0, 2, 0);
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setSize(rect.width, rect.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+
+  controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.maxPolarAngle = Math.PI / 2.1;
+  controls.minDistance = 6;
+  controls.maxDistance = 25;
+  controls.target.set(0, 2, 0);
+
+  // Lighting — bright, flat, clinical fluorescent
+  const ambient = new THREE.AmbientLight(0xf5f5f0, 0.9);
+  scene.add(ambient);
+  const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  mainLight.position.set(0, 10, 3);
+  scene.add(mainLight);
+  const fillLight = new THREE.DirectionalLight(0xf0f0e8, 0.5);
+  fillLight.position.set(-5, 8, -3);
+  scene.add(fillLight);
+  const backFill = new THREE.DirectionalLight(0xf0f0e8, 0.3);
+  backFill.position.set(5, 6, 8);
+  scene.add(backFill);
+  // Fluorescent overhead pools
+  [-5, 0, 5].forEach(x => {
+    const fl = new THREE.PointLight(0xffffff, 0.4, 10);
+    fl.position.set(x, 7.5, 0);
+    scene.add(fl);
+  });
+
+  buildRoom();
+
+  // Desks, chairs, and cots at three positions
+  const positions = [
+    { x: -5, z: -2, id: 'main', label: 'Lawrence' },
+    { x: 0, z: -2, id: 'wallace', label: 'Wallace' },
+    { x: 5, z: -2, id: 'gromit', label: 'Gromit' },
+  ];
+  positions.forEach(p => {
+    const desk = buildDesk(p.x, p.z);
+    desks[p.id] = desk;
+    desk.traverse(child => { if (child.name === 'screenFace') screens[p.id] = child; });
+    // Cot placed to the side
+    cots[p.id] = buildCot(p.x + 2.2, p.z + 3);
+    cots[p.id].rotation.y = -0.2;
+  });
+
+  // Characters — facing desk (facing -Z toward monitor)
+  const lawrence = buildLawrence();
+  lawrence.position.set(-5, 0, -0.5);
+  lawrence.rotation.y = Math.PI; // face the screen
+  scene.add(lawrence);
+  characters.main = lawrence;
+
+  const wallace = buildWallace();
+  wallace.position.set(0, 0, -0.5);
+  wallace.rotation.y = Math.PI;
+  scene.add(wallace);
+  characters.wallace = wallace;
+
+  const gromit = buildGromit();
+  gromit.position.set(5, 0, -0.5);
+  gromit.rotation.y = Math.PI;
+  scene.add(gromit);
+  characters.gromit = gromit;
+
+  // Init agent states
+  Object.keys(characters).forEach(id => { agentStates[id] = { working: true, transition: 0 }; });
+
+  // Name plates on desks
+  positions.forEach((p, i) => {
+    const plate = box(1.2, 0.15, 0.3, 0x2a2a3a);
+    plate.position.set(p.x, 1.95, p.z + 0.6);
+    scene.add(plate);
+  });
+
+  clock = new THREE.Clock();
+  animate();
+  updateOfficeLegend();
+
+  window.addEventListener('resize', () => {
+    const r = canvas.parentElement.getBoundingClientRect();
+    camera.aspect = r.width / r.height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(r.width, r.height);
+  });
+}
+
+let zzzTimers = { main: 0, wallace: 0, gromit: 0 };
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const t = clock.elapsedTime;
+
+  const deskPositions = { main: { x: -5, z: -0.5 }, wallace: { x: 0, z: -0.5 }, gromit: { x: 5, z: -0.5 } };
+
+  Object.entries(characters).forEach(([id, char]) => {
+    const working = isAgentWorking(id);
+    const state = agentStates[id];
+    const cot = cots[id];
+    const screen = screens[id];
+    const deskPos = deskPositions[id];
+    const cotPos = { x: cot.position.x, z: cot.position.z };
+
+    if (working !== state.working) {
+      state.working = working;
+      state.transition = 0;
+    }
+    state.transition = Math.min(1, state.transition + dt * 2);
+
+    // Screen — green terminal glow when on, dark when off (Severance style)
+    if (screen) {
+      if (working) {
+        screen.material.color.setHex(0x0a2a0a);
+        screen.material.emissive.setHex(0x00cc44);
+        screen.material.emissiveIntensity = 0.4 + Math.sin(t * 2) * 0.05;
+      } else {
+        screen.material.color.setHex(0x0a0a0a);
+        screen.material.emissive.setHex(0x000000);
+        screen.material.emissiveIntensity = 0;
+      }
+    }
+
+    if (working) {
+      // Standing at desk, facing monitor (rotY = PI)
+      const tx = deskPos.x, tz = deskPos.z;
+      char.position.x += (tx - char.position.x) * 0.05;
+      char.position.z += (tz - char.position.z) * 0.05;
+      char.position.y += (Math.sin(t * 2) * 0.03 - char.position.y) * 0.1;
+      char.rotation.x += (0 - char.rotation.x) * 0.08;
+      char.rotation.y += (Math.PI + Math.sin(t * 0.5) * 0.03 - char.rotation.y) * 0.08;
+      char.rotation.z += (0 - char.rotation.z) * 0.08;
+      // Typing / claw animation
+      char.children.forEach(c => {
+        if (c.name && c.name.startsWith('clawTop')) {
+          c.rotation.x = Math.sin(t * 8) * 0.1;
+        }
+      });
+    } else {
+      // Walk to cot and lie down
+      const tx = cotPos.x, tz = cotPos.z;
+      char.position.x += (tx - char.position.x) * 0.04;
+      char.position.z += (tz - char.position.z) * 0.04;
+      char.position.y += (0.7 - char.position.y) * 0.04;
+      // Lie on back (rotate around X)
+      char.rotation.x += (-Math.PI / 2 * 0.9 - char.rotation.x) * 0.03;
+      char.rotation.z += (0 - char.rotation.z) * 0.03;
+      char.rotation.y += (Math.PI - char.rotation.y) * 0.03;
+      // Gentle breathing
+      char.position.y += Math.sin(t * 0.8) * 0.01;
+      // Spawn Z's
+      zzzTimers[id] = (zzzTimers[id] || 0) + dt;
+      if (zzzTimers[id] > 1.5) {
+        zzzTimers[id] = 0;
+        addZzz(char);
+      }
+    }
+  });
+
+  // Animate Z particles
+  for (let i = zzzParticles.length - 1; i >= 0; i--) {
+    const z = zzzParticles[i];
+    z.userData.age += dt;
+    z.position.y = z.userData.startY + z.userData.age * z.userData.speed;
+    z.position.x += Math.sin(z.userData.age * 2) * 0.005;
+    const s = z.userData.size + z.userData.age * 0.08;
+    z.scale.set(s, s, s);
+    z.material.opacity = Math.max(0, 0.8 - z.userData.age * 0.3);
+    z.rotation.z = z.userData.age * 0.5;
+    if (z.userData.age > 3) {
+      scene.remove(z);
+      zzzParticles.splice(i, 1);
+    }
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+function updateOfficeLegend() {
+  const legend = document.getElementById('office-legend');
+  if (!legend) return;
+  const agents = [
+    { id: 'main', name: 'Lawrence', color: '#e84430' },
+    { id: 'wallace', name: 'Wallace', color: '#eab308' },
+    { id: 'gromit', name: 'Gromit', color: '#3b82f6' },
+  ];
+  legend.innerHTML = agents.map(a => {
+    const working = isAgentWorking(a.id);
+    return `<div style="background:rgba(255,255,255,0.85);padding:6px 12px;border-radius:8px;display:flex;align-items:center;gap:8px;font-size:13px;color:#1e293b;border:1px solid #e2e8f0;backdrop-filter:blur(4px)">
+      <span style="width:8px;height:8px;border-radius:50%;background:${working ? '#10b981' : '#94a3b8'};display:inline-block"></span>
+      <span style="color:${a.color};font-weight:600">${a.name}</span>
+      <span style="color:#64748b;font-size:12px">${working ? 'Working' : 'Sleeping'}</span>
+    </div>`;
+  }).join('');
+}
+
+// Patch showPanel to init office on first visit
+const _origShow = window.showPanel;
+window.showPanel = function(name) {
+  _origShow(name);
+  if (name === 'office') { initOffice(); updateOfficeLegend(); }
+};
+
+// Update legend on data refresh
+const _origRender = window.render;
+window.render = function() {
+  _origRender();
+  if (officeInitialized) updateOfficeLegend();
+};
+</script>
+</body>
+</html>
